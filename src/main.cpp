@@ -139,8 +139,9 @@ int InitMotor()
     NonDwellSteps=RunToLow(1, 10000, 500);
     delay(100);
   
-    RunMotor(1,(DwellSteps/2), 500);  
-    TotalSteps=DwellSteps+NonDwellSteps;
+    RunMotor(1,(1+(DwellSteps/2)), 500); 
+
+    TotalSteps=DwellSteps+NonDwellSteps+2;
     return TotalSteps;
 
 
