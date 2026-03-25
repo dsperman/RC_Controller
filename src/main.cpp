@@ -11,11 +11,10 @@ const int stepPin = 8; // Step otuput
 const int dirPin = 9;  // Direction output
 const int enaPin = 10;  // Enable output
 const int proxPin = 6;  //Proximity switch input
-int StepsPerRev;
-int MicroSteps;
 int CycleSteps;
 int StepDelay;
 int StepCount;
+int HalfDwell;
   
 
 void setup()
@@ -122,28 +121,71 @@ int RunToHigh(int Direction, int Steps, int Speed)
 int InitMotor()
 {
     int DwellSteps;
-    int NonDwellSteps;
     int TotalSteps;
+    long Edges[9];
+    int EdgeState[9];
+    int EdgeCount;
+    bool LastProx=false;
+    bool CrntProx=false;
 
-    //get to start position
-    NonDwellSteps=RunToLow(1, 10000, 500);
-       delay(100);
-     DwellSteps=RunToHigh(1, 10000, 500);
- 
-    delay(100);
-    NonDwellSteps=RunToLow(1, 10000, 500);
+    digitalWrite(dirPin, 1); // Set direction 
+    //return 0;
 
-    delay(100);
-    DwellSteps=RunToHigh(1, 10000, 500);
-    delay(100);
-    NonDwellSteps=RunToLow(1, 10000, 500);
-    delay(100);
+    LastProx=digitalRead(proxPin);
+
+    for (long i = 0; i < 1000000; i++)
+    { // Travel 3200 Steps
+      
+      CrntProx=digitalRead(proxPin);
+      
+      if (LastProx != CrntProx)
+        {
+
+        //change in state
+        Edges[EdgeCount] = i;
+        EdgeState[EdgeCount]=CrntProx;
+        EdgeCount++;  
+                
+        if (EdgeCount > 9)
+          {
+            i=1000001;
+          }
+        }
+          
+      
   
-    RunMotor(1,(1+(DwellSteps/2)), 500); 
+        digitalWrite(stepPin, HIGH);
+        delayMicroseconds(2); // Adjust for speed
+        digitalWrite(stepPin, LOW);
+        delayMicroseconds(200); // Adjust for speed
+    }  
+     
+    if (EdgeState[0]=HIGH)
+    {
+      TotalSteps=((Edges[3]-Edges[1])+(Edges[5]-Edges[3])+(Edges[7]-Edges[5])/3);
 
-    TotalSteps=DwellSteps+NonDwellSteps+2;
-    return TotalSteps;
+      DwellSteps=((Edges[2]-Edges[1])+(Edges[4]-Edges[3])+(Edges[6]-Edges[5])/3);
 
+      RunMotor(0,(DwellSteps/2),150);
+    }
+    else{
+      TotalSteps=((Edges[4]-Edges[2])+(Edges[6]-Edges[4])+(Edges[8]-Edges[6])/3);
+
+      DwellSteps=((Edges[3]-Edges[2])+(Edges[5]-Edges[4])+(Edges[7]-Edges[6])/3);
+
+      HalfDwell=(DwellSteps/2);
+
+      RunMotor(0,(HalfDwell),150);
+
+    }
+
+    CycleSteps=TotalSteps;
 
 
 }
+
+
+   
+
+
+
