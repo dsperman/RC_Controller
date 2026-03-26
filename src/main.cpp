@@ -6,7 +6,6 @@ int RunToLow(int, int, int);
 int InitMotor();
 
 
-#include "Arduino.h"
 const int stepPin = 8; // Step otuput
 const int dirPin = 9;  // Direction output
 const int enaPin = 10;  // Enable output
@@ -15,7 +14,7 @@ int CycleSteps;
 int StepDelay;
 int StepCount;
 int HalfDwell;
-  
+bool RunOnce;  
 
 void setup()
 {
@@ -26,8 +25,8 @@ void setup()
     digitalWrite(enaPin, HIGH);
     delay(500);
     StepDelay=500;          
-
-    CycleSteps=InitMotor();
+    CycleSteps=1000;
+    //CycleSteps=InitMotor();
 
 
 
@@ -36,11 +35,18 @@ void setup()
 void loop()
 {
  // StepCount =  RunToRise(1, TotalSteps, StepDelay);
+    
+    if (RunOnce==LOW){
+    CycleSteps=InitMotor();
 
+      RunOnce=HIGH;
+    }
+RunOnce=HIGH;
     RunMotor(1, CycleSteps, StepDelay);
 
    delay(1000);
 
+    
 
   }
 
@@ -49,6 +55,8 @@ void RunMotor(int Direction, int Steps, int Speed)
 //void RunMotor(int Direction, int Speed, int Steps)
 {
     digitalWrite(dirPin, Direction); // Set direction 
+    digitalWrite(enaPin, HIGH);
+    
 
     delay(1000);               // wait 1s  
     for (int i = 0; i < Steps; i++)
@@ -87,6 +95,7 @@ int RunToLow(int Direction, int Steps, int Speed)
         
   //    }
     }
+    return 0;
 }
 
 int RunToHigh(int Direction, int Steps, int Speed)
@@ -116,6 +125,7 @@ int RunToHigh(int Direction, int Steps, int Speed)
         
   //    }
     }
+    return 0;
 }
 
 int InitMotor()
@@ -127,6 +137,13 @@ int InitMotor()
     int EdgeCount;
     bool LastProx=false;
     bool CrntProx=false;
+
+RunMotor(1, 1000, 150);
+RunMotor(0, 1000, 150);
+RunMotor(1, 1000, 150);
+RunMotor(0, 1000, 150);
+delay(500);
+
 
     digitalWrite(dirPin, 1); // Set direction 
     //return 0;
@@ -151,7 +168,7 @@ int InitMotor()
             i=1000001;
           }
         }
-          
+        LastProx=CrntProx;
       
   
         digitalWrite(stepPin, HIGH);
@@ -160,27 +177,35 @@ int InitMotor()
         delayMicroseconds(200); // Adjust for speed
     }  
      
-    if (EdgeState[0]=HIGH)
+    if (EdgeState[0]==LOW)
     {
-      TotalSteps=((Edges[3]-Edges[1])+(Edges[5]-Edges[3])+(Edges[7]-Edges[5])/3);
+      //TotalSteps=(((Edges[3]-Edges[1])+(Edges[5]-Edges[3])+(Edges[7]-Edges[5]))/3);
+      TotalSteps=(Edges[4]-Edges[2]);
+      DwellSteps=(((Edges[2]-Edges[1])+(Edges[4]-Edges[3])+(Edges[6]-Edges[5]))/3);
 
-      DwellSteps=((Edges[2]-Edges[1])+(Edges[4]-Edges[3])+(Edges[6]-Edges[5])/3);
+      HalfDwell=(DwellSteps/2);
 
-      RunMotor(0,(DwellSteps/2),150);
+      RunMotor(1,(HalfDwell),150);
+ 
     }
-    else{
-      TotalSteps=((Edges[4]-Edges[2])+(Edges[6]-Edges[4])+(Edges[8]-Edges[6])/3);
+    else
+    {
+      //TotalSteps=(((Edges[4]-Edges[2])+(Edges[6]-Edges[4])+(Edges[8]-Edges[6]))/3);
+      TotalSteps=(Edges[4]-Edges[2]);  //+(Edges[6]-Edges[4])+(Edges[8]-Edges[6]))/3);
 
-      DwellSteps=((Edges[3]-Edges[2])+(Edges[5]-Edges[4])+(Edges[7]-Edges[6])/3);
+
+      DwellSteps=(((Edges[3]-Edges[2])+(Edges[5]-Edges[4])+(Edges[7]-Edges[6]))/3);
 
       HalfDwell=(DwellSteps/2);
 
       RunMotor(0,(HalfDwell),150);
+      
 
     }
+    HalfDwell=(DwellSteps/2);
+    return TotalSteps;
 
-    CycleSteps=TotalSteps;
-
+ 
 
 }
 
